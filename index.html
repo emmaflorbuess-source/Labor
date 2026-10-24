@@ -428,7 +428,15 @@ button.ghost { background: transparent; color: var(--teal); }
   ["k-T", "k-a"].forEach(id => $(id).addEventListener("input", drawKalk));
 
   drawReaktor(); drawGG(); drawKalk();
-  show((location.hash || "#reaktor").slice(1));
+  function startTab() {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get("tab"); } catch (e) {}
+    var h = (location.hash || "").replace("#", "");
+    return (q || h || "reaktor").toLowerCase();
+  }
+  show(startTab());
+  window.addEventListener("hashchange", function () { show((location.hash || "#reaktor").slice(1)); });
+  window.addEventListener("pageshow", function () { show(startTab()); });
 })();
 </script>
 
