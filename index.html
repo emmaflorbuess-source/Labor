@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>[hidden]{display:none!important} body{margin:0} img{max-width:100%}</style>
+<title>Haber-Bosch-Labor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: Kopfzeile mit Reitern, darunter je Reiter Regler-Spalte links und Diagramm rechts (mobil gestapelt) */
+:root {
+  --bg: #f6f8f8;
+  --panel: #ffffff;
+  --ink: #12323b;
+  --muted: #587580;
+  --line: #d5e0df;
+  --teal: #1e8c7e;
+  --terra: #c8553d;
+  --amber: #d9932c;
+  --slate: #5b7a86;
+  --soft: #eaf3f1;
+  --display: "Literata", Cambria, Georgia, serif;
+  --body: "Source Sans 3", Calibri, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1c21; --panel: #142a31; --ink: #e4efee; --muted: #9ab5b9; --line: #2a464e;
+    --teal: #3fb7a6; --terra: #e47a60; --amber: #ebb04f; --slate: #8fadb8; --soft: #1b363e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1c21; --panel: #142a31; --ink: #e4efee; --muted: #9ab5b9; --line: #2a464e;
+  --teal: #3fb7a6; --terra: #e47a60; --amber: #ebb04f; --slate: #8fadb8; --soft: #1b363e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+h1 { font-family: var(--display); font-size: clamp(1.7rem, 3.4vw, 2.4rem); margin: 0; text-wrap: balance; }
+.eq { font-family: var(--display); font-size: 1.15rem; color: var(--muted); }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab {
+  font: 600 1rem var(--body); color: var(--ink); background: var(--panel); border: 1.5px solid var(--line);
+  border-radius: 999px; padding: 8px 18px; cursor: pointer;
+}
+.tab[aria-selected="true"] { background: var(--terra); border-color: var(--terra); color: #fff; }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--amber); outline-offset: 2px; }
+.panel { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 820px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.controls { display: grid; gap: 18px; align-content: start; }
+.ctl label { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; }
+.ctl output { font-variant-numeric: tabular-nums; color: var(--terra); font-weight: 700; }
+input[type="range"] { width: 100%; accent-color: var(--terra); height: 28px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.act {
+  font: 600 1rem var(--body); border-radius: 10px; padding: 9px 16px; cursor: pointer;
+  border: 1.5px solid var(--teal); background: var(--teal); color: #fff;
+}
+button.ghost { background: transparent; color: var(--teal); }
+.switch { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
+.switch input { width: 20px; height: 20px; accent-color: var(--teal); }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.stat { background: var(--soft); border-radius: 10px; padding: 10px 12px; }
+.stat b { display: block; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 0.85rem; color: var(--muted); }
+.verdict { border-radius: 10px; padding: 12px 14px; font-weight: 600; background: var(--soft); border-left: 0; }
+.chartbox { display: grid; gap: 12px; }
+.chartbox svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.92rem; color: var(--muted); }
+.legend i { display: inline-block; width: 26px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 6px; }
+.note { font-size: 0.85rem; color: var(--muted); }
+.gauge-title { font-weight: 600; font-size: 0.95rem; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Haber-Bosch-Labor</h1>
+    <div class="eq">N₂ + 3 H₂ ⇌ 2 NH₃ &nbsp; ΔH = −92 kJ·mol⁻¹</div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Versuche">
+    <button class="tab" role="tab" id="tab-reaktor" aria-controls="reaktor" aria-selected="true">Reaktor: T und p</button>
+    <button class="tab" role="tab" id="tab-gleichgewicht" aria-controls="gleichgewicht" aria-selected="false">Gleichgewicht: K und Q</button>
+    <button class="tab" role="tab" id="tab-kalk" aria-controls="kalk" aria-selected="false">Kühlwasser: Kalk</button>
+  </nav>
+
+  <!-- ============ REAKTOR ============ -->
+  <section class="panel" id="reaktor" role="tabpanel" aria-labelledby="tab-reaktor">
+    <div class="card controls">
+      <div class="ctl">
+        <label for="r-T">Temperatur <output id="r-To">450 °C</output></label>
+        <input type="range" id="r-T" min="200" max="700" step="5" value="450">
+      </div>
+      <div class="ctl">
+        <label for="r-p">Druck <output id="r-po">30 MPa</output></label>
+        <input type="range" id="r-p" min="5" max="60" step="1" value="30">
+      </div>
+      <label class="switch"><input type="checkbox" id="r-cat" checked> Eisen-Katalysator</label>
+      <div class="stats">
+        <div class="stat"><span>NH₃ im Gleichgewicht</span><b id="r-yeq">–</b></div>
+        <div class="stat"><span>NH₃ am Reaktorende</span><b id="r-yact">–</b></div>
+        <div class="stat"><span>K<sub>p</sub> (Van't Hoff)</span><b id="r-K">–</b></div>
+        <div class="stat"><span>Optimum bei diesem Druck</span><b id="r-opt">–</b></div>
+      </div>
+      <div class="verdict" id="r-verdict">–</div>
+    </div>
+    <div class="card chartbox">
+      <svg id="r-svg" viewBox="0 0 640 400" role="img" aria-label="NH3-Anteil gegen Temperatur"></svg>
+      <div class="legend">
+        <span><i style="border-color: var(--teal)"></i>Gleichgewichtsanteil (Van't Hoff + MWG)</span>
+        <span><i style="border-color: var(--terra); border-top-style: dashed"></i>tatsächlich erreicht in der Verweilzeit</span>
+      </div>
+      <p class="note">Gleichgewicht berechnet mit K<sub>p</sub>(450 °C) = 1,03·10⁻² MPa⁻² aus dem Lehrbuch und ΔH = −92 kJ·mol⁻¹. Die Geschwindigkeit ist ein vereinfachtes Modell.</p>
+    </div>
+  </section>
+
+  <!-- ============ GLEICHGEWICHT ============ -->
+  <section class="panel" id="gleichgewicht" role="tabpanel" aria-labelledby="tab-gleichgewicht" hidden>
+    <div class="card controls">
+      <div class="ctl">
+        <label for="g-t">Zeit <output id="g-to">0</output></label>
+        <input type="range" id="g-t" min="0" max="100" step="0.5" value="0">
+      </div>
+      <div class="row">
+        <button class="act" id="g-play">▶ Abspielen</button>
+        <button class="act ghost" id="g-reset">Zurück auf 0</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="g-sep"> bei Zeit 50: NH₃ im Kühler abtrennen</label>
+      <div class="stats">
+        <div class="stat"><span>n(NH₃) im Reaktor</span><b id="g-n">–</b></div>
+        <div class="stat"><span>NH₃ insgesamt gewonnen</span><b id="g-tot">–</b></div>
+      </div>
+      <div class="verdict" id="g-verdict">–</div>
+      <p class="note">450 °C, 30 MPa, Start mit 1 mol N₂ und 3 mol H₂.</p>
+    </div>
+    <div class="card chartbox">
+      <svg id="g-svg" viewBox="0 0 640 330" role="img" aria-label="Stoffmengen gegen Zeit"></svg>
+      <div class="legend">
+        <span><i style="border-color: var(--slate)"></i>H₂</span>
+        <span><i style="border-color: var(--terra)"></i>N₂</span>
+        <span><i style="border-color: var(--teal)"></i>NH₃</span>
+      </div>
+      <div class="gauge-title">Vergleich Q mit K (logarithmische Skala)</div>
+      <svg id="g-gauge" viewBox="0 0 640 90" role="img" aria-label="Q im Vergleich zu K"></svg>
+    </div>
+  </section>
+
+  <!-- ============ KALK ============ -->
+  <section class="panel" id="kalk" role="tabpanel" aria-labelledby="tab-kalk" hidden>
+    <div class="card controls">
+      <div class="ctl">
+        <label for="k-T">Temperatur Kühlwasser <output id="k-To">15 °C</output></label>
+        <input type="range" id="k-T" min="10" max="90" step="1" value="15">
+      </div>
+      <div class="ctl">
+        <label for="k-a">Säure zugeben (Entkalken) <output id="k-ao">0 %</output></label>
+        <input type="range" id="k-a" min="0" max="100" step="1" value="0">
+      </div>
+      <div class="stats">
+        <div class="stat"><span>c(CO₃²⁻)</span><b id="k-c">–</b></div>
+        <div class="stat"><span>Q / K<sub>L</sub></span><b id="k-q">–</b></div>
+      </div>
+      <div class="verdict" id="k-verdict">–</div>
+      <p class="note">Modellwerte: c(Ca²⁺) = 1,5·10⁻³ mol·l⁻¹ (hartes Wasser), K<sub>L</sub>(CaCO₃) = 4·10⁻⁹ mol²·l⁻² aus dem Lehrbuch. Beim Erhitzen entweicht CO₂, dadurch steigt c(CO₃²⁻).</p>
+    </div>
+    <div class="card chartbox">
+      <svg id="k-svg" viewBox="0 0 640 330" role="img" aria-label="Rohrquerschnitt mit Kalkschicht und Gleichungen"></svg>
+      <div class="gauge-title">Vergleich Q mit K<sub>L</sub> (logarithmische Skala)</div>
+      <svg id="k-gauge" viewBox="0 0 640 90" role="img" aria-label="Q im Vergleich zu K_L"></svg>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const fmt = (v, d = 1) => v.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const sci = v => {
+    if (!isFinite(v) || v <= 0) return "0";
+    const e = Math.floor(Math.log10(v)), m = v / Math.pow(10, e);
+    const sup = String(e).replace(/-/g, "⁻").replace(/\d/g, c => "⁰¹²³⁴⁵⁶⁷⁸⁹"[c]);
+    return fmt(m, 1) + "·10" + sup;
+  };
+  const NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent, text) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function frame(svg, box, xr, yr, xt, yt, xl, yl) {
+    svg.innerHTML = "";
+    const sx = v => box.x + (v - xr[0]) / (xr[1] - xr[0]) * box.w;
+    const sy = v => box.y + box.h - (v - yr[0]) / (yr[1] - yr[0]) * box.h;
+    const g = el("g", {}, svg);
+    yt.forEach(v => {
+      el("line", { x1: box.x, x2: box.x + box.w, y1: sy(v), y2: sy(v), stroke: "var(--line)", "stroke-width": 1 }, g);
+      el("text", { x: box.x - 10, y: sy(v) + 5, "text-anchor": "end", fill: "var(--muted)", "font-size": 14 }, g, String(v));
+    });
+    xt.forEach(v => el("text", { x: sx(v), y: box.y + box.h + 22, "text-anchor": "middle", fill: "var(--muted)", "font-size": 14 }, g, String(v)));
+    el("line", { x1: box.x, x2: box.x + box.w, y1: box.y + box.h, y2: box.y + box.h, stroke: "var(--slate)", "stroke-width": 1.5 }, g);
+    el("line", { x1: box.x, x2: box.x, y1: box.y, y2: box.y + box.h, stroke: "var(--slate)", "stroke-width": 1.5 }, g);
+    el("text", { x: box.x + box.w, y: box.y + box.h + 44, "text-anchor": "end", fill: "var(--muted)", "font-size": 14, "font-style": "italic" }, g, xl);
+    el("text", { x: box.x, y: box.y - 12, fill: "var(--muted)", "font-size": 14, "font-style": "italic" }, g, yl);
+    return { sx, sy, g };
+  }
+  function tx(parent, attrs, str) {
+    const t = el("text", attrs, parent);
+    const parts = str.split(/(_[A-Za-z0-9])/);
+    parts.forEach(part => {
+      if (!part) return;
+      if (part[0] === "_") {
+        el("tspan", { dy: 4, "font-size": "75%" }, t, part[1]);
+        el("tspan", { dy: -4 }, t, "\u200b");
+      } else el("tspan", {}, t, part);
+    });
+    return t;
+  }
+  function path(pts) { return pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" "); }
+
+  // ---------- Chemie-Modell ----------
+  const R = 8.314, dH = -92000;
+  const Kp = Tk => 1.03e-2 * Math.exp((-dH / R) * (1 / Tk - 1 / 723)); // MPa^-2
+  function yEq(tc, P) {
+    const K = Kp(tc + 273.15) * 27 * P * P / 256;
+    let lo = 0, hi = 0.99999;
+    for (let i = 0; i < 70; i++) { const y = (lo + hi) / 2; (y * y / Math.pow(1 - y, 4) < K) ? lo = y : hi = y; }
+    return lo;
+  }
+  const kTau = (tc, cat) => (cat ? 1.2 : 0.03) * Math.exp(-12000 * (1 / (tc + 273.15) - 1 / 723));
+  const yAct = (tc, P, cat) => yEq(tc, P) * (1 - Math.exp(-kTau(tc, cat)));
+
+  // ---------- Reiter ----------
+  const tabs = ["reaktor", "gleichgewicht", "kalk"];
+  function show(name) {
+    if (!tabs.includes(name)) name = "reaktor";
+    tabs.forEach(t => {
+      $(t).hidden = t !== name;
+      $("tab-" + t).setAttribute("aria-selected", String(t === name));
+    });
+    try { history.replaceState(null, "", "#" + name); } catch (e) {}
+  }
+  tabs.forEach(t => $("tab-" + t).addEventListener("click", () => show(t)));
+
+  // ---------- 1 Reaktor ----------
+  function drawReaktor() {
+    const T = +$("r-T").value, P = +$("r-p").value, cat = $("r-cat").checked;
+    $("r-To").textContent = T + " °C"; $("r-po").textContent = P + " MPa";
+    const svg = $("r-svg");
+    const f = frame(svg, { x: 60, y: 30, w: 560, h: 300 }, [200, 700], [0, 100], [200, 300, 400, 500, 600, 700], [0, 25, 50, 75, 100], "Temperatur in °C", "NH₃-Anteil in %");
+    const eq = [], act = [];
+    let best = { t: 200, v: -1 };
+    for (let t = 200; t <= 700; t += 5) {
+      const a = yAct(t, P, cat) * 100;
+      eq.push([f.sx(t), f.sy(yEq(t, P) * 100)]); act.push([f.sx(t), f.sy(a)]);
+      if (a > best.v) best = { t, v: a };
+    }
+    el("rect", { x: f.sx(Math.max(200, best.t - 25)), y: 30, width: f.sx(Math.min(700, best.t + 25)) - f.sx(Math.max(200, best.t - 25)), height: 300, fill: "var(--amber)", opacity: 0.16 }, f.g);
+    el("text", { x: f.sx(best.t) + (T > best.t - 40 && T < best.t + 40 ? (T >= best.t ? -10 : 10) : 0), y: 48, "text-anchor": (T > best.t - 40 && T < best.t + 40 ? (T >= best.t ? "end" : "start") : "middle"), fill: "var(--amber)", "font-size": 14, "font-weight": 700 }, f.g, "Optimum");
+    el("path", { d: path(eq), fill: "none", stroke: "var(--teal)", "stroke-width": 3.5 }, f.g);
+    el("path", { d: path(act), fill: "none", stroke: "var(--terra)", "stroke-width": 3, "stroke-dasharray": "9 6" }, f.g);
+    const ye = yEq(T, P) * 100, ya = yAct(T, P, cat) * 100;
+    el("line", { x1: f.sx(T), x2: f.sx(T), y1: 30, y2: 330, stroke: "var(--ink)", "stroke-width": 1.5, "stroke-dasharray": "4 4" }, f.g);
+    el("circle", { cx: f.sx(T), cy: f.sy(ye), r: 8, fill: "var(--teal)", stroke: "var(--panel)", "stroke-width": 2 }, f.g);
+    el("circle", { cx: f.sx(T), cy: f.sy(ya), r: 8, fill: "var(--terra)", stroke: "var(--panel)", "stroke-width": 2 }, f.g);
+    $("r-yeq").textContent = fmt(ye) + " %";
+    $("r-yact").textContent = fmt(ya) + " %";
+    $("r-K").textContent = sci(Kp(T + 273.15));
+    $("r-opt").textContent = "≈ " + best.t + " °C";
+    const speed = 1 - Math.exp(-kTau(T, cat));
+    let v;
+    if (speed < 0.5) v = "Gleichgewicht günstig, aber die Reaktion ist zu langsam. Es entsteht wenig NH₃.";
+    else if (ye < 25) v = "Die Reaktion ist schnell, aber das Gleichgewicht liegt weit links (K ist klein).";
+    else v = "Guter Kompromiss: schnell genug und noch viel NH₃ im Gleichgewicht.";
+    if (!cat) v += " Ohne Katalysator wandert das Optimum zu hohen Temperaturen.";
+    $("r-verdict").textContent = v;
+  }
+  ["r-T", "r-p", "r-cat"].forEach(id => $(id).addEventListener("input", drawReaktor));
+
+  // ---------- 2 Gleichgewicht ----------
+  const Pg = 30, Kg = Kp(723), tau = 9, tSep = 50;
+  const xiEq = (() => { // Umsatz bei N2:H2 = 1:3
+    const y = yEq(450, Pg); return 2 * y / (1 + y) / 1; // y = 2ξ/(4-2ξ) -> ξ = 2y/(1+y)
+  })();
+  function state(t, sep) {
+    // liefert n(N2), n(H2), n(NH3), gewonnen
+    let base = 1, xiFrac;
+    if (!sep || t <= tSep) {
+      xiFrac = (xiEq / 1) * (1 - Math.exp(-t / tau)); // ξ bezogen auf 1 mol N2-Start
+      const xi = xiFrac;
+      return { N2: 1 - xi, H2: 3 - 3 * xi, NH3: 2 * xi, won: 2 * xi };
+    }
+    const xi1 = xiEq * (1 - Math.exp(-tSep / tau));
+    base = 1 - xi1;
+    const xi2 = base * xiEq * (1 - Math.exp(-(t - tSep) / tau));
+    return { N2: base - xi2, H2: 3 * (base - xi2), NH3: 2 * xi2, won: 2 * xi1 + 2 * xi2 };
+  }
+  function Qof(s) {
+    const n = s.N2 + s.H2 + s.NH3;
+    if (s.NH3 <= 0) return 0;
+    const x = [s.N2 / n, s.H2 / n, s.NH3 / n];
+    return (x[2] * x[2]) / (x[0] * Math.pow(x[1], 3) * Pg * Pg);
+  }
+  function gauge(svg, ratio, labelK, leftTxt, rightTxt) {
+    svg.innerHTML = "";
+    const x0 = 40, x1 = 600, y = 50, lo = -3, hi = 3;
+    const sx = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
+    el("rect", { x: x0, y: y - 7, width: sx(0) - x0, height: 14, rx: 7, fill: "var(--teal)", opacity: 0.25 }, svg);
+    el("rect", { x: sx(0), y: y - 7, width: x1 - sx(0), height: 14, rx: 7, fill: "var(--terra)", opacity: 0.25 }, svg);
+    for (let v = lo; v <= hi; v++) el("text", { x: sx(v), y: y + 34, "text-anchor": "middle", fill: "var(--muted)", "font-size": 13 }, svg, v === 0 ? "1" : "10" + (v < 0 ? "⁻" : "") + "⁰¹²³"[Math.abs(v)]);
+    el("line", { x1: sx(0), x2: sx(0), y1: y - 18, y2: y + 18, stroke: "var(--ink)", "stroke-width": 3 }, svg);
+    tx(svg, { x: sx(0), y: y - 24, "text-anchor": "middle", fill: "var(--ink)", "font-size": 14, "font-weight": 700 }, labelK);
+    const lr = ratio <= 0 ? lo : Math.max(lo, Math.min(hi, Math.log10(ratio)));
+    const off = ratio <= 0 || Math.log10(ratio) < lo || Math.log10(ratio) > hi;
+    el("circle", { cx: sx(lr), cy: y, r: 11, fill: lr < -0.03 ? "var(--teal)" : lr > 0.03 ? "var(--terra)" : "var(--amber)", stroke: "var(--panel)", "stroke-width": 2.5 }, svg);
+    el("text", { x: sx(lr), y: y + 5, "text-anchor": "middle", fill: "#fff", "font-size": 12, "font-weight": 700 }, svg, "Q");
+    tx(svg, { x: x0, y: 14, fill: "var(--teal)", "font-size": 13, "font-weight": 700 }, leftTxt);
+    tx(svg, { x: x1, y: 14, "text-anchor": "end", fill: "var(--terra)", "font-size": 13, "font-weight": 700 }, rightTxt);
+    if (off) el("text", { x: sx(lr) + (lr <= lo ? 18 : -18), y: y + 5, "text-anchor": lr <= lo ? "start" : "end", fill: "var(--muted)", "font-size": 12 }, svg, "(ausserhalb)");
+  }
+  function drawGG() {
+    const t = +$("g-t").value, sep = $("g-sep").checked;
+    $("g-to").textContent = fmt(t, 1);
+    const svg = $("g-svg");
+    const f = frame(svg, { x: 60, y: 30, w: 560, h: 230 }, [0, 100], [0, 3], [0, 20, 40, 60, 80, 100], [0, 1, 2, 3], "Zeit", "Stoffmenge n in mol");
+    const keys = [["H2", "var(--slate)"], ["N2", "var(--terra)"], ["NH3", "var(--teal)"]];
+    keys.forEach(([k, col]) => {
+      const all = [], done = [];
+      for (let s = 0; s <= 100; s += 0.5) {
+        const st = state(s, sep);
+        const p = [f.sx(s), f.sy(st[k])];
+        all.push(p); if (s <= t) done.push(p);
+      }
+      el("path", { d: path(all), fill: "none", stroke: col, "stroke-width": 2, opacity: 0.18 }, f.g);
+      if (done.length > 1) el("path", { d: path(done), fill: "none", stroke: col, "stroke-width": 3.5 }, f.g);
+      const st = state(t, sep);
+      el("circle", { cx: f.sx(t), cy: f.sy(st[k]), r: 6, fill: col, stroke: "var(--panel)", "stroke-width": 2 }, f.g);
+    });
+    if (sep) {
+      el("line", { x1: f.sx(tSep), x2: f.sx(tSep), y1: 30, y2: 260, stroke: "var(--amber)", "stroke-width": 2, "stroke-dasharray": "6 5" }, f.g);
+      el("text", { x: f.sx(tSep) + 8, y: 48, fill: "var(--amber)", "font-size": 14, "font-weight": 700 }, f.g, "NH₃ abgetrennt");
+    }
+    const st = state(t, sep);
+    $("g-n").textContent = fmt(st.NH3, 2) + " mol";
+    $("g-tot").textContent = fmt(st.won, 2) + " mol";
+    const ratio = Qof(st) / Kg;
+    gauge($("g-gauge"), ratio, "K", "Q < K: läuft nach rechts", "Q > K: läuft nach links");
+    let v;
+    if (ratio < 0.9) v = "Q < K: Es bildet sich NH₃, die Hinreaktion überwiegt.";
+    else v = "Q ≈ K: Gleichgewicht. Hin- und Rückreaktion laufen gleich schnell.";
+    if (sep && t > tSep && t < tSep + 25) v = "NH₃ wurde entfernt → Q ist gesunken → die Reaktion läuft wieder nach rechts (Le Chatelier).";
+    $("g-verdict").textContent = v;
+  }
+  let timer = null;
+  function stop() { if (timer) { clearInterval(timer); timer = null; } $("g-play").textContent = "▶ Abspielen"; }
+  $("g-play").addEventListener("click", () => {
+    if (timer) { stop(); return; }
+    if (+$("g-t").value >= 100) $("g-t").value = 0;
+    $("g-play").textContent = "❚❚ Pause";
+    timer = setInterval(() => {
+      const nv = Math.min(100, +$("g-t").value + 0.5);
+      $("g-t").value = nv; drawGG();
+      if (nv >= 100) stop();
+    }, 40);
+  });
+  $("g-reset").addEventListener("click", () => { stop(); $("g-t").value = 0; drawGG(); });
+  $("g-t").addEventListener("input", () => { stop(); drawGG(); });
+  $("g-sep").addEventListener("input", drawGG);
+
+  // ---------- 3 Kalk ----------
+  const KL = 4e-9, cCa = 1.5e-3;
+  function drawKalk() {
+    const T = +$("k-T").value, a = +$("k-a").value / 100;
+    $("k-To").textContent = T + " °C"; $("k-ao").textContent = Math.round(a * 100) + " %";
+    const cCO3 = 1.33e-6 * Math.exp(0.037 * (T - 15)) * Math.pow(10, -2 * a);
+    const ratio = cCa * cCO3 / KL;
+    $("k-c").textContent = sci(cCO3) + " mol·l⁻¹";
+    $("k-q").textContent = ratio >= 10 ? fmt(ratio, 0) : fmt(ratio, 2);
+    const svg = $("k-svg"); svg.innerHTML = "";
+    // Rohrquerschnitt
+    const cx = 150, cy = 165, R0 = 120;
+    el("circle", { cx, cy, r: R0, fill: "var(--slate)" }, svg);
+    el("circle", { cx, cy, r: R0 - 12, fill: "#d9d3c4" }, svg);
+    const th = ratio > 1 ? Math.min(70, 30 * Math.log10(ratio) + 6) : 0;
+    el("circle", { cx, cy, r: R0 - 12 - th, fill: "#cfe3f0" }, svg);
+    el("text", { x: cx, y: cy + 30, "text-anchor": "middle", fill: "#12323b", "font-size": 15, "font-weight": 700 }, svg, "Kühlwasser");
+    el("text", { x: cx, y: 318, "text-anchor": "middle", fill: "var(--muted)", "font-size": 14 }, svg, th > 0 ? "Kalkschicht wächst" : "kein Kalk");
+    // CO2-Bläschen
+    const nb = Math.round((T - 10) / 10);
+    for (let i = 0; i < nb; i++) {
+      const ang = i * 2.4, rr = 30 + (i * 13) % 45;
+      el("circle", { cx: cx - 55 + ((i * 37) % 110), cy: cy - 70 + ((i * 23) % 40), r: 5, fill: "none", stroke: "#12323b", "stroke-width": 1.5, opacity: 0.6 }, svg);
+    }
+    // Gleichungen rechts
+    const x = 320;
+    const lines = [
+      ["Beim Erhitzen entweicht CO₂:", "var(--muted)", 15, 400],
+      ["2 HCO₃⁻ ⇌ CO₃²⁻ + CO₂↑ + H₂O", T > 30 ? "var(--terra)" : "var(--ink)", 17, 700],
+      ["Dann gilt für den Kalk:", "var(--muted)", 15, 400],
+      ["Ca²⁺ + CO₃²⁻ ⇌ CaCO₃(s)", ratio > 1 ? "var(--terra)" : "var(--ink)", 17, 700],
+      ["Q = c(Ca²⁺) · c(CO₃²⁻)", "var(--ink)", 16, 400],
+      ["Säure entfernt CO₃²⁻:", "var(--muted)", 15, 400],
+      ["CaCO₃ + 2 H⁺ → Ca²⁺ + H₂O + CO₂", a > 0.05 ? "var(--teal)" : "var(--ink)", 17, 700],
+    ];
+    lines.forEach((l, i) => el("text", { x, y: 50 + i * 40, fill: l[1], "font-size": l[2], "font-weight": l[3] }, svg, l[0]));
+    gauge($("k-gauge"), ratio, "K_L", "Q < K_L: Kalk löst sich", "Q > K_L: Kalk fällt aus");
+    let v;
+    if (ratio > 1.05) v = "Q &gt; K<sub>L</sub>: Die Lösung ist übersättigt, CaCO₃ fällt aus und setzt sich im Rohr ab.";
+    else if (ratio > 0.95) v = "Q ≈ K<sub>L</sub>: gesättigte Lösung, gerade an der Grenze.";
+    else v = "Q &lt; K<sub>L</sub>: Die Lösung ist ungesättigt, es fällt kein Kalk aus.";
+    $("k-verdict").innerHTML = v;
+  }
+  ["k-T", "k-a"].forEach(id => $(id).addEventListener("input", drawKalk));
+
+  drawReaktor(); drawGG(); drawKalk();
+  show((location.hash || "#reaktor").slice(1));
+})();
+</script>
+
+</body>
+</html>
